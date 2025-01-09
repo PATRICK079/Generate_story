@@ -1,6 +1,7 @@
 import random
 import ollama
 import streamlit as st
+import logging 
 from llama_index.core.llms import ChatMessage
 from llama_index.llms.ollama import Ollama
 
