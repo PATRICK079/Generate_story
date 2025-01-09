@@ -1,6 +1,10 @@
 import random
-import streamlit as st
 import ollama
+import streamlit as st
+from llama_index.core.llms import ChatMessage
+from llama_index.llms.ollama import Ollama
+
+logging.basicConfig(level=logging.INFO)
 
 def chat_short_story(length, genre, theme, tone, writing_style):
     # Set the system message for the assistant
