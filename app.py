@@ -1,15 +1,18 @@
 import random
-import httpx  # To make HTTP requests to the Ollama API
 import streamlit as st
-import logging
 import ollama
-logging.basicConfig(level=logging.INFO)
+import logging
 
-# Function to generate short story using Ollama API
+# Ensure you have Llama 2 model pulled in Ollama
+try:
+    ollama.pull("llama2")  # Pulls the Llama 2 model if it's not already pulled
+except Exception as e:
+    logging.error(f"Error pulling Llama 2 model: {e}")
+
 def chat_short_story(length, genre, theme, tone, writing_style):
     # Set the system message for the assistant
     system_message = "You are a highly creative short story writer capable of writing across any genre."
-    system_message += " and generate title for all the story created."
+    system_message += " and generate title for all the stories created."
     
     # Construct the prompt with all the details
     prompt = (
@@ -19,29 +22,29 @@ def chat_short_story(length, genre, theme, tone, writing_style):
         f"and create a compelling narrative to captivate the audience."
     )
 
-    # Interact with the model using Ollama API
-    url = "http://localhost:11434/api/generate"  # Local Ollama API URL
-    payload = {
-        "input": prompt
-    }
-
-    # Send the request to Ollama API and get the response
+    # Interact with the model using ollama.chat with the correct URL
+    url = "http://localhost:11434/api/chat"  # Update with the correct Ollama API endpoint URL
     try:
-        with httpx.Client() as client:
-            response = client.post(url, json=payload)
-            response.raise_for_status()  # Will raise an error for non-200 status codes
-            data = response.json()
-            # Assuming 'content' holds the story output
-            return data["content"]
-    except httpx.RequestError as e:
-        logging.error(f"Error while requesting Ollama API: {e}")
+        result = ollama.chat(
+            model="llama2",  # Use Llama 2 model
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": prompt},
+            ],
+            url=url  # Specify the custom URL for Ollama API
+        )
+
+        # Assuming the result contains a key "content" for the story output
+        return result["message"]["content"]
+    
+    except Exception as e:
+        logging.error(f"Error generating the story: {e}")
         return "Error generating the story. Please try again later."
-    except KeyError:
-        logging.error("Unexpected response structure from the API")
-        return "Error: Invalid response from the API."
 
+# Streamlit interface setup
+st.title("Welcome to Patrick's Story Generator")
 
-# Predefined options for random selection
+# Predefined options for story attributes
 Length = [100, 250, 750]
 Length = [l for l in Length if l >= 100]
 r_length = random.choice(Length)
@@ -65,17 +68,15 @@ r_Style = random.choice(Writing_Styles)
 Tones = ["Formal", "Optimistic", "Worried", "Friendly", "Curious", "Assertive", "Encouraging"]
 r_tones = random.choice(Tones)
 
-# Streamlit Interface setup
-st.title("Welcome to the Patrick's Story Generator")
+# Streamlit input components
+length = st.slider("Story Length", min_value=100, max_value=2500, value=r_length, step=50)
+genre = st.selectbox("Story Genre", Genre, index=Genre.index(r_genre))
+theme = st.selectbox("Story Theme", Themes, index=Themes.index(r_themes))
+writing_style = st.selectbox("Writing Style", Writing_Styles, index=Writing_Styles.index(r_Style))
+tone = st.selectbox("Story Tone", Tones, index=Tones.index(r_tones))
 
-# User inputs for the story parameters
-story_length = st.slider("Story Length", min_value=100, max_value=2500, value=100)
-story_genre = st.selectbox("Story Genre", options=Genre)
-story_theme = st.selectbox("Story Theme", options=Themes)
-writing_style = st.selectbox("Writing Style", options=Writing_Styles)
-story_tone = st.selectbox("Story Tone", options=Tones)
-
-# Generate the story when the button is pressed
+# Generate story button
 if st.button("Generate Story"):
-    story = chat_short_story(story_length, story_genre, story_theme, story_tone, writing_style)
+    story = chat_short_story(length, genre, theme, tone, writing_style)
+    st.subheader("Generated Story:")
     st.write(story)
