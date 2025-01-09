@@ -2,9 +2,7 @@ import random
 import httpx  # To make HTTP requests to the Ollama API
 import streamlit as st
 import logging
-from llama_index.core.llms import ChatMessage
-from llama_index.llms.ollama import Ollama
-
+import ollama
 logging.basicConfig(level=logging.INFO)
 
 # Function to generate short story using Ollama API
